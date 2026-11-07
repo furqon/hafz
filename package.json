@@ -1,0 +1,14 @@
+{
+  "name": "hafz",
+  "version": "0.1.0",
+  "description": "Lightweight iPod-inspired Quran recitation audio player PWA for kids",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev-server.mjs",
+    "scan": "node scripts/generate-tracks.mjs",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

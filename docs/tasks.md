@@ -21,18 +21,18 @@ A lightweight, sleek, iPod-inspired Quran recitation audio player PWA for kids. 
 
 ## Phase 1: Project Setup & Core Architecture
 
-- [ ] **1.1 Initialize Project Structure**
-  - [ ] Set up minimal project layout (`index.html`, `styles/`, `src/`, `public/audio/`, `public/icons/`).
-  - [ ] Configure lightweight build/dev tooling (or zero-build static ES modules) for fast local development and tiny bundle size.
-- [ ] **1.2 Filename Parser & Metadata Extractor**
-  - [ ] Implement parser for pattern `juz xx yy surah_name aa-bb.(m4a|mp3)` (case-insensitive, tolerant of spaces/hyphens/underscores in `surah_name`).
-  - [ ] Extract structured metadata: `{ filename, url, juz, pageInJuz, surahName, ayatStart, ayatEnd, ext }`.
-  - [ ] Provide graceful fallback metadata using the raw filename if a file does not strictly match the pattern.
-  - [ ] Write unit tests covering valid filenames, multi-word Surah names, `.m4a`/`.mp3` extensions, and fallback cases.
-- [ ] **1.3 Audio Folder & Track Loader**
-  - [ ] Support loading bundled/hosted recordings from a static `audio/` folder via an auto-generated `tracks.json` manifest script (scan `audio/` folder and generate index).
-  - [ ] Support loading a local folder directly in the browser/device via `<input type="file" webkitdirectory multiple>` / File Picker so new Mac recordings can be dropped in and opened anytime.
-  - [ ] Sort tracks naturally by `juz` -> `pageInJuz` -> `ayatStart`.
+- [x] **1.1 Initialize Project Structure**
+  - [x] Set up minimal project layout (`index.html`, `styles/`, `src/`, `public/audio/`, `public/icons/`).
+  - [x] Configure lightweight build/dev tooling (or zero-build static ES modules) for fast local development and tiny bundle size.
+- [x] **1.2 Filename Parser & Metadata Extractor**
+  - [x] Implement parser for pattern `juz xx yy surah_name aa-bb.(m4a|mp3)` (case-insensitive, tolerant of spaces/hyphens/underscores in `surah_name`).
+  - [x] Extract structured metadata: `{ filename, url, juz, pageInJuz, surahName, ayatStart, ayatEnd, ext }`.
+  - [x] Provide graceful fallback metadata using the raw filename if a file does not strictly match the pattern.
+  - [x] Write unit tests covering valid filenames, multi-word Surah names, `.m4a`/`.mp3` extensions, and fallback cases.
+- [x] **1.3 Audio Folder & Track Loader**
+  - [x] Support loading bundled/hosted recordings from a static `audio/` folder via an auto-generated `tracks.json` manifest script (scan `audio/` folder and generate index).
+  - [x] Support loading a local folder directly in the browser/device via `<input type="file" webkitdirectory multiple>` / File Picker so new Mac recordings can be dropped in and opened anytime.
+  - [x] Sort tracks naturally by `juz` -> `pageInJuz` -> `ayatStart`.
 
 ---
 

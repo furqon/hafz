@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#1e2229" />
+    <title>Hafz — Quran Audio Player</title>
+    <link rel="stylesheet" href="./styles/main.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="ipod-frame" aria-label="Hafz Quran Audio Player">
+        <header class="ipod-topbar">
+          <span class="brand-title">Hafz</span>
+          <span id="track-count-badge" class="status-badge">0 tracks</span>
+        </header>
+
+        <section class="ipod-screen" aria-live="polite">
+          <div id="now-playing-summary" class="screen-header">
+            <p class="screen-subtitle" id="current-subtitle">Drop or load Quran recordings</p>
+            <h1 class="screen-title" id="current-title">Ready to Listen</h1>
+          </div>
+
+          <ul id="track-list" class="track-list" role="listbox" aria-label="Recitation Tracks"></ul>
+        </section>
+
+        <footer class="ipod-loader-bar">
+          <label class="loader-btn" for="folder-input">
+            Load Folder
+            <input
+              id="folder-input"
+              type="file"
+              webkitdirectory
+              directory
+              multiple
+              hidden
+            />
+          </label>
+          <label class="loader-btn loader-btn-secondary" for="files-input">
+            Add Files
+            <input
+              id="files-input"
+              type="file"
+              accept=".m4a,.mp3,audio/mp4,audio/mpeg,audio/*"
+              multiple
+              hidden
+            />
+          </label>
+        </footer>
+      </section>
+    </main>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
