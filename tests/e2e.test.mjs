@@ -68,6 +68,13 @@ async function appFetch(url, options = {}) {
  */
 function createMockDocument() {
   const elementsById = new Map();
+  const metaColorScheme = {
+    name: 'color-scheme',
+    content: 'light dark',
+    setAttribute(k, v) {
+      if (k === 'content') this.content = String(v);
+    }
+  };
 
   function createElement(tag) {
     const listeners = new Map();
@@ -123,16 +130,21 @@ function createMockDocument() {
   }
 
   const ids = [
+    'ipod-screen',
     'track-list',
     'track-count-badge',
     'repeat-badge',
     'loading-badge',
     'current-title',
     'current-subtitle',
+    'current-ayat',
     'seek-slider',
     'current-time',
+    'remaining-time',
     'total-duration',
     'playlist-filter',
+    'btn-menu',
+    'btn-theme',
     'btn-repeat',
     'btn-prev',
     'btn-play',
@@ -149,8 +161,10 @@ function createMockDocument() {
   }
 
   return {
+    metaColorScheme,
     createElement,
-    getElementById: (id) => elementsById.get(id) || null
+    getElementById: (id) => elementsById.get(id) || null,
+    querySelector: (sel) => (sel === 'meta[name="color-scheme"]' ? metaColorScheme : null)
   };
 }
 
@@ -159,11 +173,16 @@ describe('End-to-End (E2E) Server & Player Integration', () => {
     await generateTracksManifest();
   });
 
-  it('serves index.html with all Phase 2 player controls and accessible markup', async () => {
+  it('serves index.html with all Phase 2 & Phase 3 iPod UI controls and accessible markup', async () => {
     const res = await appFetch('http://localhost/');
     assert.equal(res.status, 200);
     const html = await res.text();
 
+    assert.match(html, /meta name="color-scheme" content="light dark"/);
+    assert.match(html, /id="ipod-screen"[^>]*data-view="now-playing"/);
+    assert.match(html, /class="click-wheel"/);
+    assert.match(html, /id="btn-menu"/);
+    assert.match(html, /id="btn-theme"/);
     assert.match(html, /id="seek-slider"/);
     assert.match(html, /id="playlist-filter"/);
     assert.match(html, /id="btn-play"/);
@@ -210,7 +229,8 @@ describe('End-to-End (E2E) Server & Player Integration', () => {
     const store = new Map();
     const storage = {
       getItem: (k) => (store.has(k) ? store.get(k) : null),
-      setItem: (k, v) => store.set(k, String(v))
+      setItem: (k, v) => store.set(k, String(v)),
+      removeItem: (k) => store.delete(k)
     };
 
     const audio = createMockAudioElement();
@@ -253,12 +273,13 @@ describe('End-to-End (E2E) Server & Player Integration', () => {
     assert.equal(snap.repeatMode, REPEAT_MODES.ONE);
   });
 
-  it('drives the full DOM UI end-to-end via createAppUI button clicks, filter changes, and slider input', async () => {
+  it('drives the full Phase 3 iPod DOM UI end-to-end: Click-Wheel, Menu/Browser toggle, grouped Juz headers, and Theme toggle', async () => {
     const doc = createMockDocument();
     const store = new Map();
     const storage = {
       getItem: (k) => (store.has(k) ? store.get(k) : null),
-      setItem: (k, v) => store.set(k, String(v))
+      setItem: (k, v) => store.set(k, String(v)),
+      removeItem: (k) => store.delete(k)
     };
 
     const app = createAppUI(doc, {
@@ -274,28 +295,43 @@ describe('End-to-End (E2E) Server & Player Integration', () => {
 
     assert.equal(app.els.trackCountBadge.textContent, '3 tracks');
     assert.equal(app.els.currentTitle.textContent, 'Al-Mulk (01–12)');
-    assert.equal(app.els.btnPlay.textContent, 'Play');
+    assert.equal(app.els.currentSubtitle.textContent, 'Juz 29 • Page 01');
+    assert.equal(app.els.currentAyat.textContent, 'Surah Al-Mulk • Ayat 01–12');
+    assert.equal(app.getScreenView(), 'now-playing');
 
-    // Click Play button
-    app.els.btnPlay.click();
+    // Toggle to Track Browser screen via Click-Wheel MENU button
+    app.els.btnMenu.click();
+    assert.equal(app.getScreenView(), 'browser');
+    assert.equal(app.els.ipodScreen.getAttribute('data-view'), 'browser');
+    assert.equal(app.els.btnMenu.getAttribute('aria-expanded'), 'true');
+
+    // Verify grouped Juz headers in track list (2 Juz headers + 3 track items = 5 children)
+    assert.equal(app.els.trackList.children.length, 5);
+    assert.equal(app.els.trackList.children[0].className, 'track-group-header');
+    assert.equal(app.els.trackList.children[0].textContent, 'Juz 29');
+    assert.equal(app.els.trackList.children[2].className, 'track-group-header');
+    assert.equal(app.els.trackList.children[2].textContent, 'Juz 30');
+
+    // Click the second track (An-Naba in Juz 30) in the browser list -> plays and switches back to Now Playing
+    const secondTrackBtn = app.els.trackList.children[3].children[0];
+    secondTrackBtn.click();
+    assert.equal(app.getScreenView(), 'now-playing');
+    assert.equal(app.els.currentTitle.textContent, 'An-Naba (01–30)');
     assert.equal(app.els.btnPlay.textContent, 'Pause');
 
-    // Click Next button
-    app.els.btnNext.click();
-    assert.equal(app.els.currentTitle.textContent, 'An-Naba (01–30)');
-
-    // Scrub seek slider to 25%
+    // Scrub seek slider to 25% (30s of 120s -> remaining -01:30)
     app.els.seekSlider.value = '25';
     app.els.seekSlider.dispatchEvent('input');
     assert.equal(app.els.currentTime.textContent, '00:30');
+    assert.equal(app.els.remainingTime.textContent, '-01:30');
 
-    // Change filter dropdown to juz:30
-    app.els.playlistFilter.value = 'juz:30';
-    app.els.playlistFilter.dispatchEvent('change');
-    assert.equal(app.els.trackCountBadge.textContent, '2 tracks');
+    // Toggle theme (default system in headless is 'dark' -> toggles to 'light', then back to system default)
+    app.els.btnTheme.click();
+    assert.equal(doc.metaColorScheme.content, 'light');
+    assert.equal(storage.getItem('color-scheme'), 'light');
 
-    // Click Repeat button to cycle mode
-    app.els.btnRepeat.click();
-    assert.equal(app.els.repeatBadge.textContent, 'Play Once');
+    app.els.btnTheme.click();
+    assert.equal(doc.metaColorScheme.content, 'light dark');
+    assert.equal(storage.getItem('color-scheme'), null);
   });
 });

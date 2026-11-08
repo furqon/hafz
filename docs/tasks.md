@@ -56,22 +56,22 @@ A lightweight, sleek, iPod-inspired Quran recitation audio player PWA for kids. 
 
 ## Phase 3: Sleek iPod-Inspired UI/UX
 
-- [ ] **3.1 iPod-Style Layout & Visual Design**
-  - [ ] Design a clean, distraction-free, pocket-sized player frame centered on desktop and full-screen on mobile.
-  - [ ] **Top Screen Display**:
+- [x] **3.1 iPod-Style Layout & Visual Design**
+  - [x] Design a clean, distraction-free, pocket-sized player frame centered on desktop and full-screen on mobile.
+  - [x] **Top Screen Display**:
     - Now Playing card showing Surah name, `Juz xx • Page yy`, and `Ayat aa–bb`.
     - Clean progress bar with elapsed/remaining timestamps and repeat-mode badge.
     - Compact track list / browser view toggleable on the screen.
-  - [ ] **Bottom Tactile Controls (Click-Wheel / Minimal Button Pad)**:
+  - [x] **Bottom Tactile Controls (Click-Wheel / Minimal Button Pad)**:
     - Intuitive large touch targets for Kids: `Menu / List`, `Prev`, `Play / Pause` (center), `Next`, and `Repeat Mode`.
-- [ ] **3.2 Track Selection & Browsing UX**
-  - [ ] Smooth screen navigation between **Now Playing** and **Track List** (grouped by Juz & Page).
-  - [ ] Visual indicator for the currently playing track.
-  - [ ] Quick "Load Folder / Files" button for importing local `.m4a`/`.mp3` files.
-- [ ] **3.3 Responsive & Kid-Friendly Polish**
-  - [ ] High-contrast, readable typography and smooth micro-animations.
-  - [ ] Dark/Light sleek metallic or minimal theme options.
-  - [ ] Prevent accidental page zoom/scroll bounce on mobile touchscreens.
+- [x] **3.2 Track Selection & Browsing UX**
+  - [x] Smooth screen navigation between **Now Playing** and **Track List** (grouped by Juz & Page).
+  - [x] Visual indicator for the currently playing track.
+  - [x] Quick "Load Folder / Files" button for importing local `.m4a`/`.mp3` files.
+- [x] **3.3 Responsive & Kid-Friendly Polish**
+  - [x] High-contrast, readable typography and smooth micro-animations.
+  - [x] Dark/Light sleek metallic or minimal theme options.
+  - [x] Prevent accidental page zoom/scroll bounce on mobile touchscreens.
 
 ---
 

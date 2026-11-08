@@ -3,86 +3,132 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      try {
+        document.querySelector('meta[name="color-scheme"]').content =
+          localStorage.getItem('color-scheme') ?? 'light dark';
+      } catch {}
+    </script>
     <meta name="theme-color" content="#1e2229" />
     <title>Hafz — Quran Audio Player</title>
     <link rel="stylesheet" href="./styles/main.css" />
   </head>
   <body>
     <main class="app-shell">
-      <div class="ipod-frame">
+      <div class="ipod-frame" id="ipod-frame">
         <header class="ipod-topbar">
-          <span class="brand-title">Hafz</span>
+          <div class="brand-group">
+            <span class="brand-title">Hafz</span>
+            <span id="track-count-badge" class="status-badge">0 tracks</span>
+          </div>
           <div class="topbar-badges">
             <span id="loading-badge" class="status-badge status-loading" hidden>Loading…</span>
             <span id="repeat-badge" class="status-badge">Repeat All</span>
-            <span id="track-count-badge" class="status-badge">0 tracks</span>
+            <button
+              id="btn-theme"
+              type="button"
+              class="theme-toggle-btn"
+              aria-label="Toggle color theme"
+            >
+              Theme
+            </button>
           </div>
         </header>
 
-        <div class="ipod-screen">
-          <div id="now-playing-summary" class="screen-header">
-            <p class="screen-subtitle" id="current-subtitle">Drop or load Quran recordings</p>
-            <h1 class="screen-title" id="current-title">Ready to Listen</h1>
-          </div>
+        <div class="ipod-screen" id="ipod-screen" data-view="now-playing">
+          <!-- Screen View 1: Now Playing Card -->
+          <div id="view-now-playing" class="screen-view screen-now-playing">
+            <div class="now-playing-card" id="now-playing-summary">
+              <div class="recitation-emblem" aria-hidden="true">
+                <span class="emblem-icon">﴾﴿</span>
+              </div>
+              <p class="screen-subtitle" id="current-subtitle">Drop or load Quran recordings</p>
+              <h1 class="screen-title" id="current-title">Ready to Listen</h1>
+              <p class="screen-ayat-badge" id="current-ayat">Select a track to begin</p>
+            </div>
 
-          <div class="progress-section">
-            <label for="seek-slider" class="visually-hidden">Seek playback position</label>
-            <input
-              id="seek-slider"
-              class="seek-slider"
-              type="range"
-              min="0"
-              max="100"
-              step="0.1"
-              value="0"
-            />
-            <div class="time-row">
-              <span id="current-time">00:00</span>
-              <span id="total-duration">00:00</span>
+            <div class="progress-section">
+              <label for="seek-slider" class="visually-hidden">Seek playback position</label>
+              <input
+                id="seek-slider"
+                class="seek-slider"
+                type="range"
+                min="0"
+                max="100"
+                step="0.1"
+                value="0"
+              />
+              <div class="time-row">
+                <span id="current-time">00:00</span>
+                <span id="remaining-time">-00:00</span>
+                <span id="total-duration">00:00</span>
+              </div>
             </div>
           </div>
 
-          <div class="filter-bar">
-            <label for="playlist-filter" class="filter-label">Playlist:</label>
-            <select id="playlist-filter" class="filter-select">
-              <option value="all">All Tracks (0)</option>
-            </select>
-          </div>
+          <!-- Screen View 2: Track Browser & Grouped Playlist -->
+          <div id="view-browser" class="screen-view screen-browser">
+            <div class="filter-bar">
+              <label for="playlist-filter" class="filter-label">Filter:</label>
+              <select id="playlist-filter" class="filter-select">
+                <option value="all">All Tracks (0)</option>
+              </select>
+            </div>
 
-          <ul id="track-list" class="track-list" role="list"></ul>
+            <ul id="track-list" class="track-list" role="list"></ul>
+          </div>
         </div>
 
-        <div class="player-controls" role="group" aria-label="Playback Controls">
-          <button
-            id="btn-repeat"
-            type="button"
-            class="control-btn control-btn-secondary"
-            aria-label="Repeat Mode: Repeat All"
-          >
-            Repeat All
-          </button>
-          <button id="btn-prev" type="button" class="control-btn" aria-label="Previous Track">
-            Prev
-          </button>
-          <button
-            id="btn-play"
-            type="button"
-            class="control-btn control-btn-primary"
-            aria-label="Play"
-          >
-            Play
-          </button>
-          <button id="btn-next" type="button" class="control-btn" aria-label="Next Track">
-            Next
-          </button>
-          <button
-            id="btn-stop"
-            type="button"
-            class="control-btn control-btn-secondary"
-            aria-label="Stop"
-          >
-            Stop
-          </button>
+        <!-- Tactile iPod Click-Wheel Controls -->
+        <div class="wheel-Area" role="group" aria-label="iPod Click-Wheel Controls">
+          <div class="click-wheel">
+            <button
+              id="btn-menu"
+              type="button"
+              class="wheel-btn wheel-btn-top"
+              aria-label="Toggle Track List Menu"
+              aria-expanded="false"
+            >
+              MENU
+            </button>
+
+            <button
+              id="btn-prev"
+              type="button"
+              class="wheel-btn wheel-btn-left"
+              aria-label="Previous Track"
+            >
+              ⏮
+            </button>
+
+            <button
+              id="btn-play"
+              type="button"
+              class="wheel-center-btn"
+              aria-label="Play"
+            >
+              Play
+            </button>
+
+            <button
+              id="btn-next"
+              type="button"
+              class="wheel-btn wheel-btn-right"
+              aria-label="Next Track"
+            >
+              ⏭
+            </button>
+
+            <button
+              id="btn-repeat"
+              type="button"
+              class="wheel-btn wheel-btn-bottom"
+              aria-label="Repeat Mode: Repeat All"
+            >
+              Repeat All
+            </button>
+          </div>
         </div>
 
         <footer class="ipod-loader-bar">
@@ -107,6 +153,14 @@
               hidden
             />
           </label>
+          <button
+            id="btn-stop"
+            type="button"
+            class="loader-btn loader-btn-secondary stop-mini-btn"
+            aria-label="Stop Playback"
+          >
+            Stop
+          </button>
         </footer>
       </div>
     </main>

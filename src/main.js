@@ -1,5 +1,5 @@
 /**
- * Hafz Application Entry Point (Phase 2: Audio Player & Playlist Engine)
+ * Hafz Application Entry Point (Phase 3: Sleek iPod-Inspired UI/UX)
  */
 
 import {
@@ -7,20 +7,28 @@ import {
   loadTracksFromFileList,
   mergeAndSortTracks
 } from './loader.js';
-import { createPlayerController } from './player.js';
+import { pad2 } from './parser.js';
+import { createPlayerController, formatTime } from './player.js';
 
 export function createAppUI(doc = globalThis.document, options = {}) {
+  const storage = options.storage !== undefined ? options.storage : globalThis.localStorage;
+
   const els = {
+    ipodScreen: doc.getElementById('ipod-screen'),
     trackList: doc.getElementById('track-list'),
     trackCountBadge: doc.getElementById('track-count-badge'),
     repeatBadge: doc.getElementById('repeat-badge'),
     loadingBadge: doc.getElementById('loading-badge'),
     currentTitle: doc.getElementById('current-title'),
     currentSubtitle: doc.getElementById('current-subtitle'),
+    currentAyat: doc.getElementById('current-ayat'),
     seekSlider: doc.getElementById('seek-slider'),
     currentTime: doc.getElementById('current-time'),
+    remainingTime: doc.getElementById('remaining-time'),
     totalDuration: doc.getElementById('total-duration'),
     playlistFilter: doc.getElementById('playlist-filter'),
+    btnMenu: doc.getElementById('btn-menu'),
+    btnTheme: doc.getElementById('btn-theme'),
     btnRepeat: doc.getElementById('btn-repeat'),
     btnPrev: doc.getElementById('btn-prev'),
     btnPlay: doc.getElementById('btn-play'),
@@ -36,6 +44,80 @@ export function createAppUI(doc = globalThis.document, options = {}) {
     CSS.supports('accent-color', '#38bdf8');
 
   let lastFilterSignature = '';
+  let screenView = 'now-playing';
+
+  function setScreenView(view) {
+    screenView = view === 'browser' ? 'browser' : 'now-playing';
+    if (els.ipodScreen) {
+      els.ipodScreen.setAttribute('data-view', screenView);
+      els.ipodScreen.dataset.view = screenView;
+    }
+    if (els.btnMenu) {
+      const isBrowser = screenView === 'browser';
+      els.btnMenu.setAttribute('aria-expanded', String(isBrowser));
+      els.btnMenu.textContent = isBrowser ? 'NOW' : 'MENU';
+    }
+    return screenView;
+  }
+
+  function toggleScreenView() {
+    return setScreenView(screenView === 'now-playing' ? 'browser' : 'now-playing');
+  }
+
+  function getSystemScheme() {
+    if (typeof globalThis.matchMedia === 'function') {
+      return globalThis.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return 'dark';
+  }
+
+  function getStoredScheme() {
+    try {
+      const val = storage?.getItem?.('color-scheme');
+      return val === 'light' || val === 'dark' ? val : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function getRenderedScheme() {
+    return getStoredScheme() || getSystemScheme();
+  }
+
+  function applyMetaScheme(contentValue) {
+    const meta = doc.querySelector?.('meta[name="color-scheme"]');
+    if (meta) {
+      meta.content = contentValue;
+      meta.setAttribute?.('content', contentValue);
+    }
+    if (els.btnTheme) {
+      const active = getRenderedScheme();
+      els.btnTheme.textContent = active === 'dark' ? '☾ Dark' : '☀ Light';
+      els.btnTheme.setAttribute(
+        'aria-label',
+        active === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'
+      );
+    }
+  }
+
+  function toggleTheme() {
+    const currentRendered = getRenderedScheme();
+    const target = currentRendered === 'dark' ? 'light' : 'dark';
+    const systemScheme = getSystemScheme();
+
+    try {
+      if (target === systemScheme) {
+        storage?.removeItem?.('color-scheme');
+        applyMetaScheme('light dark');
+      } else {
+        storage?.setItem?.('color-scheme', target);
+        applyMetaScheme(target);
+      }
+    } catch {
+      applyMetaScheme(target);
+    }
+    return target;
+  }
 
   function updateSliderFallbackProgress(percent) {
     if (!els.seekSlider) return;
@@ -86,7 +168,19 @@ export function createAppUI(doc = globalThis.document, options = {}) {
       return;
     }
 
+    let lastGroupKey = null;
+
     for (const track of filteredTracks) {
+      const groupKey = track.isParsed ? `Juz ${pad2(track.juz)}` : 'Other Recordings';
+      if (groupKey !== lastGroupKey) {
+        lastGroupKey = groupKey;
+        const headerLi = doc.createElement('li');
+        headerLi.className = 'track-group-header';
+        headerLi.setAttribute('role', 'presentation');
+        headerLi.textContent = groupKey;
+        els.trackList.appendChild(headerLi);
+      }
+
       const isActive = track.id === currentTrackId;
       const li = doc.createElement('li');
       const btn = doc.createElement('button');
@@ -110,7 +204,7 @@ export function createAppUI(doc = globalThis.document, options = {}) {
       if (isActive) {
         const statusEl = doc.createElement('span');
         statusEl.className = 'track-playing-indicator';
-        statusEl.textContent = isPlaying ? 'Playing' : 'Selected';
+        statusEl.textContent = isPlaying ? '▶ Playing' : '⏸ Selected';
         btn.appendChild(statusEl);
       }
 
@@ -120,6 +214,7 @@ export function createAppUI(doc = globalThis.document, options = {}) {
         } else {
           player.selectTrack(track.id, { autoplay: true });
         }
+        setScreenView('now-playing');
       });
 
       li.appendChild(btn);
@@ -132,6 +227,8 @@ export function createAppUI(doc = globalThis.document, options = {}) {
       currentTrack,
       isPlaying,
       isLoading,
+      currentTime,
+      duration,
       progressPercent,
       formattedCurrentTime,
       formattedDuration,
@@ -147,6 +244,15 @@ export function createAppUI(doc = globalThis.document, options = {}) {
       els.currentSubtitle.textContent = currentTrack
         ? currentTrack.subtitle
         : 'Drop or load Quran recordings';
+    }
+    if (els.currentAyat) {
+      if (!currentTrack) {
+        els.currentAyat.textContent = 'Select a track to begin';
+      } else if (currentTrack.isParsed) {
+        els.currentAyat.textContent = `Surah ${currentTrack.surahDisplay} • Ayat ${pad2(currentTrack.ayatStart)}–${pad2(currentTrack.ayatEnd)}`;
+      } else {
+        els.currentAyat.textContent = currentTrack.filename;
+      }
     }
 
     if (els.loadingBadge) {
@@ -165,10 +271,15 @@ export function createAppUI(doc = globalThis.document, options = {}) {
     if (els.btnPlay) {
       els.btnPlay.textContent = isPlaying ? 'Pause' : 'Play';
       els.btnPlay.setAttribute('aria-label', isPlaying ? 'Pause' : 'Play');
+      els.btnPlay.setAttribute('data-playing', String(isPlaying));
     }
 
     if (els.currentTime) {
       els.currentTime.textContent = formattedCurrentTime;
+    }
+    if (els.remainingTime) {
+      const rem = duration > 0 ? Math.max(0, duration - currentTime) : 0;
+      els.remainingTime.textContent = `-${formatTime(rem)}`;
     }
     if (els.totalDuration) {
       els.totalDuration.textContent = formattedDuration;
@@ -186,6 +297,7 @@ export function createAppUI(doc = globalThis.document, options = {}) {
 
   const player = createPlayerController({
     ...options,
+    storage,
     onChange: renderPlayerState
   });
 
@@ -203,6 +315,10 @@ export function createAppUI(doc = globalThis.document, options = {}) {
   }
 
   async function init() {
+    applyMetaScheme(getStoredScheme() ?? 'light dark');
+
+    els.btnMenu?.addEventListener('click', () => toggleScreenView());
+    els.btnTheme?.addEventListener('click', () => toggleTheme());
     els.btnPlay?.addEventListener('click', () => player.togglePlay());
     els.btnPrev?.addEventListener('click', () => player.prev());
     els.btnNext?.addEventListener('click', () => player.next({ fromEnded: false }));
@@ -227,6 +343,14 @@ export function createAppUI(doc = globalThis.document, options = {}) {
       handleLocalFileSelection(e.target.files, false);
     });
 
+    if (typeof globalThis.addEventListener === 'function') {
+      globalThis.addEventListener('storage', (e) => {
+        if (e.key === 'color-scheme') {
+          applyMetaScheme(e.newValue ?? 'light dark');
+        }
+      });
+    }
+
     const staticTracks = await loadStaticTracks(
       options.manifestUrl,
       options.baseAudioPath,
@@ -236,7 +360,15 @@ export function createAppUI(doc = globalThis.document, options = {}) {
     return player;
   }
 
-  return { player, els, init };
+  return {
+    player,
+    els,
+    init,
+    setScreenView,
+    toggleScreenView,
+    toggleTheme,
+    getScreenView: () => screenView
+  };
 }
 
 if (typeof document !== 'undefined') {
@@ -244,5 +376,6 @@ if (typeof document !== 'undefined') {
   app.init();
   if (typeof window !== 'undefined') {
     window.__hafzPlayer = app.player;
+    window.__hafzApp = app;
   }
 }
