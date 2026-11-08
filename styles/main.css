@@ -242,6 +242,7 @@ body {
 /* Top Screen Display */
 .ipod-screen {
   position: relative;
+  contain: layout style paint;
   background: var(--screen-bg);
   border: 2.5px solid var(--screen-border);
   border-radius: 18px;
@@ -697,7 +698,8 @@ body {
     border-radius: 0;
     border-width: 0;
     justify-content: space-between;
-    padding: 1rem 1.1rem 1.25rem;
+    padding: max(1rem, env(safe-area-inset-top)) max(1.1rem, env(safe-area-inset-right))
+      max(1.25rem, env(safe-area-inset-bottom)) max(1.1rem, env(safe-area-inset-left));
   }
 }
 

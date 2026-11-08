@@ -1,6 +1,7 @@
 import { describe, it, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { PassThrough } from 'node:stream';
+import { auditAppShellSize } from '../scripts/audit-size.mjs';
 import { handleAppRequest } from '../scripts/dev-server.mjs';
 import { generateTracksManifest } from '../scripts/generate-tracks.mjs';
 import { loadStaticTracks } from '../src/loader.js';
@@ -10,6 +11,7 @@ import {
   createPlayerController,
   REPEAT_MODES
 } from '../src/player.js';
+import '../sw.js';
 
 /**
  * Dispatches an HTTP request directly through `handleAppRequest` and returns
@@ -55,6 +57,9 @@ async function appFetch(url, options = {}) {
     status,
     headers: {
       get: (name) => rawHeaders.get(String(name).toLowerCase()) ?? null
+    },
+    clone() {
+      return this;
     },
     text: async () => bodyBuffer.toString('utf8'),
     json: async () => JSON.parse(bodyBuffer.toString('utf8')),
@@ -173,12 +178,16 @@ describe('End-to-End (E2E) Server & Player Integration', () => {
     await generateTracksManifest();
   });
 
-  it('serves index.html with all Phase 2 & Phase 3 iPod UI controls and accessible markup', async () => {
+  it('serves index.html with all Phase 2, 3 & 4 iPod UI controls, PWA tags, and accessible markup', async () => {
     const res = await appFetch('http://localhost/');
     assert.equal(res.status, 200);
     const html = await res.text();
 
     assert.match(html, /meta name="color-scheme" content="light dark"/);
+    assert.match(html, /meta name="apple-mobile-web-app-capable" content="yes"/);
+    assert.match(html, /meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/);
+    assert.match(html, /link rel="manifest" href="\.\/manifest\.webmanifest"/);
+    assert.match(html, /link rel="apple-touch-icon" href="\.\/public\/icons\/apple-touch-icon\.png"/);
     assert.match(html, /id="ipod-screen"[^>]*data-view="now-playing"/);
     assert.match(html, /class="click-wheel"/);
     assert.match(html, /id="btn-menu"/);
@@ -191,6 +200,102 @@ describe('End-to-End (E2E) Server & Player Integration', () => {
     assert.match(html, /id="btn-repeat"/);
     assert.match(html, /id="btn-stop"/);
     assert.match(html, /id="track-list"[^>]*role="list"/);
+  });
+
+  it('serves valid PWA manifest.webmanifest, icons (192, 512, maskable, apple-touch-icon), and sw.js', async () => {
+    const manifestRes = await appFetch('http://localhost/manifest.webmanifest');
+    assert.equal(manifestRes.status, 200);
+    assert.match(manifestRes.headers.get('content-type') || '', /application\/manifest\+json/);
+
+    const manifest = await manifestRes.json();
+    assert.equal(manifest.short_name, 'Hafz');
+    assert.equal(manifest.display, 'standalone');
+    assert.ok(Array.isArray(manifest.icons) && manifest.icons.length >= 4);
+
+    for (const icon of manifest.icons) {
+      const iconUrl = new URL(icon.src, 'http://localhost/').href;
+      const iconRes = await appFetch(iconUrl);
+      assert.equal(iconRes.status, 200, `Expected 200 for icon ${icon.src}`);
+      const buf = await iconRes.arrayBuffer();
+      assert.ok(buf.byteLength > 100);
+    }
+
+    const appleIconRes = await appFetch('http://localhost/public/icons/apple-touch-icon.png');
+    assert.equal(appleIconRes.status, 200);
+
+    const swRes = await appFetch('http://localhost/sw.js');
+    assert.equal(swRes.status, 200);
+    assert.match(swRes.headers.get('content-type') || '', /text\/javascript/);
+  });
+
+  it('verifies Service Worker caching strategies (NetworkFirst, CacheFirst, StaleWhileRevalidate) and offline fallback', async () => {
+    const sw = globalThis.__hafzSW;
+    assert.ok(sw);
+    assert.ok(sw.APP_SHELL_URLS.includes('./index.html'));
+    assert.ok(sw.APP_SHELL_URLS.includes('./manifest.webmanifest'));
+
+    const cacheBoxes = new Map();
+    const origCaches = globalThis.caches;
+    const origFetch = globalThis.fetch;
+
+    let isOffline = false;
+    globalThis.caches = {
+      async open(name) {
+        if (!cacheBoxes.has(name)) cacheBoxes.set(name, new Map());
+        const box = cacheBoxes.get(name);
+        return {
+          async match(req) {
+            const key = typeof req === 'string' ? req : req.url;
+            return box.get(key) || null;
+          },
+          async put(req, res) {
+            const key = typeof req === 'string' ? req : req.url;
+            box.set(key, res);
+          },
+          async keys() {
+            return Array.from(box.keys());
+          },
+          async delete(key) {
+            box.delete(key);
+          }
+        };
+      }
+    };
+
+    globalThis.fetch = async (req) => {
+      if (isOffline) throw new Error('Network offline');
+      const url = typeof req === 'string' ? req : req.url;
+      return appFetch(url);
+    };
+
+    try {
+      // 1. NetworkFirst caches index.html when online and serves cached copy when offline
+      const onlineHtml = await sw.networkFirst({ url: 'http://localhost/index.html' }, sw.SHELL_CACHE);
+      assert.equal(onlineHtml.status, 200);
+
+      isOffline = true;
+      const offlineHtml = await sw.networkFirst({ url: 'http://localhost/index.html' }, sw.SHELL_CACHE);
+      assert.equal(offlineHtml.status, 200);
+      assert.match(await offlineHtml.text(), /Hafz/);
+
+      // 2. CacheFirst caches static asset online and serves from cache when offline
+      isOffline = false;
+      const onlineCss = await sw.cacheFirst({ url: 'http://localhost/styles/main.css' }, sw.SHELL_CACHE);
+      assert.equal(onlineCss.status, 200);
+
+      isOffline = true;
+      const cachedCss = await sw.cacheFirst({ url: 'http://localhost/styles/main.css' }, sw.SHELL_CACHE);
+      assert.equal(cachedCss.status, 200);
+    } finally {
+      globalThis.caches = origCaches;
+      globalThis.fetch = origFetch;
+    }
+  });
+
+  it('passes Phase 4.3 app shell size audit (< 50 KB gzipped)', async () => {
+    const audit = await auditAppShellSize();
+    assert.equal(audit.withinBudget, true);
+    assert.ok(audit.totalGzipBytes < 50 * 1024);
   });
 
   it('streams .m4a audio files with HTTP 206 Partial Content Range support', async () => {
@@ -273,7 +378,7 @@ describe('End-to-End (E2E) Server & Player Integration', () => {
     assert.equal(snap.repeatMode, REPEAT_MODES.ONE);
   });
 
-  it('drives the full Phase 3 iPod DOM UI end-to-end: Click-Wheel, Menu/Browser toggle, grouped Juz headers, and Theme toggle', async () => {
+  it('drives the full Phase 3 & 4 iPod DOM UI end-to-end: Click-Wheel, Menu/Browser toggle, Service Worker registration, and Theme toggle', async () => {
     const doc = createMockDocument();
     const store = new Map();
     const storage = {
@@ -282,10 +387,21 @@ describe('End-to-End (E2E) Server & Player Integration', () => {
       removeItem: (k) => store.delete(k)
     };
 
+    let registeredSwUrl = null;
+    const mockNavigator = {
+      serviceWorker: {
+        async register(url) {
+          registeredSwUrl = url;
+          return { scope: './' };
+        }
+      }
+    };
+
     const app = createAppUI(doc, {
       audio: createMockAudioElement(),
       storage,
       mediaSession: null,
+      navigator: mockNavigator,
       manifestUrl: 'http://localhost/public/audio/tracks.json',
       baseAudioPath: 'http://localhost/public/audio/',
       fetchImpl: appFetch
@@ -293,6 +409,7 @@ describe('End-to-End (E2E) Server & Player Integration', () => {
 
     await app.init();
 
+    assert.equal(registeredSwUrl, './sw.js');
     assert.equal(app.els.trackCountBadge.textContent, '3 tracks');
     assert.equal(app.els.currentTitle.textContent, 'Al-Mulk (01–12)');
     assert.equal(app.els.currentSubtitle.textContent, 'Juz 29 • Page 01');

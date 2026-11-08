@@ -10,6 +10,23 @@ import {
 import { pad2 } from './parser.js';
 import { createPlayerController, formatTime } from './player.js';
 
+/**
+ * Registers the PWA Service Worker when supported by the browser.
+ * @param {Navigator} [nav=globalThis.navigator]
+ * @param {string} [swUrl='./sw.js']
+ * @returns {Promise<ServiceWorkerRegistration|null>}
+ */
+export async function registerServiceWorker(nav = globalThis.navigator, swUrl = './sw.js') {
+  if (!nav || !('serviceWorker' in nav) || typeof nav.serviceWorker?.register !== 'function') {
+    return null;
+  }
+  try {
+    return await nav.serviceWorker.register(swUrl);
+  } catch {
+    return null;
+  }
+}
+
 export function createAppUI(doc = globalThis.document, options = {}) {
   const storage = options.storage !== undefined ? options.storage : globalThis.localStorage;
 
@@ -357,6 +374,7 @@ export function createAppUI(doc = globalThis.document, options = {}) {
       options.fetchImpl
     );
     player.setTracks(staticTracks);
+    await registerServiceWorker(options.navigator);
     return player;
   }
 

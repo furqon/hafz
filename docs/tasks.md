@@ -77,14 +77,14 @@ A lightweight, sleek, iPod-inspired Quran recitation audio player PWA for kids. 
 
 ## Phase 4: PWA & Cross-Platform Installability (Browser, Android, iPhone)
 
-- [ ] **4.1 Web App Manifest & iOS Meta Tags**
-  - [ ] Create `manifest.webmanifest` with app name (`Hafz`), standalone display mode, theme colors, and app icons (`192x192`, `512x512`, maskable).
-  - [ ] Add Apple-specific PWA tags (`apple-mobile-web-app-capable`, `apple-mobile-web-app-status-bar-style`, `apple-touch-icon`).
-- [ ] **4.2 Service Worker & Offline Support**
-  - [ ] Register a lightweight Service Worker to cache app shell (`index.html`, CSS, JS, icons) and configured audio files for offline playback.
-- [ ] **4.3 Size & Performance Audit**
-  - [ ] Ensure total app shell (HTML + CSS + JS) stays under ~50 KB gzipped.
-  - [ ] Verify instant startup and smooth 60fps UI transitions on mobile Safari (iOS) and Chrome (Android).
+- [x] **4.1 Web App Manifest & iOS Meta Tags**
+  - [x] Create `manifest.webmanifest` with app name (`Hafz`), standalone display mode, theme colors, and app icons (`192x192`, `512x512`, maskable).
+  - [x] Add Apple-specific PWA tags (`apple-mobile-web-app-capable`, `apple-mobile-web-app-status-bar-style`, `apple-touch-icon`).
+- [x] **4.2 Service Worker & Offline Support**
+  - [x] Register a lightweight Service Worker to cache app shell (`index.html`, CSS, JS, icons) and configured audio files for offline playback.
+- [x] **4.3 Size & Performance Audit**
+  - [x] Ensure total app shell (HTML + CSS + JS) stays under ~50 KB gzipped.
+  - [x] Verify instant startup and smooth 60fps UI transitions on mobile Safari (iOS) and Chrome (Android).
 
 ---
 

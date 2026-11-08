@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Hafz App Icon">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <linearGradient id="screen" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0ea5e9" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+  </defs>
+  <!-- Background Squircle / Maskable Base -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)" />
+  <!-- Sleek iPod Body -->
+  <rect x="136" y="56" width="240" height="400" rx="40" fill="#273244" stroke="#475569" stroke-width="8" />
+  <!-- Top Screen -->
+  <rect x="160" y="80" width="192" height="148" rx="18" fill="url(#screen)" />
+  <!-- Quran Emblem on Screen -->
+  <text x="256" y="168" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="56" font-weight="800">﴾﴿</text>
+  <!-- Click-Wheel -->
+  <circle cx="256" cy="340" r="78" fill="#131922" stroke="#475569" stroke-width="6" />
+  <circle cx="256" cy="340" r="30" fill="#38bdf8" />
+</svg>
