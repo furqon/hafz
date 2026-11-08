@@ -38,19 +38,19 @@ A lightweight, sleek, iPod-inspired Quran recitation audio player PWA for kids. 
 
 ## Phase 2: Audio Player & Playlist Engine
 
-- [ ] **2.1 Core Playback Controller**
-  - [ ] Play, pause, stop, next track, previous track, and seek/scrub progress bar.
-  - [ ] Support `.m4a` (AAC/ALAC) and `.mp3` playback via native HTML5 `<audio>`.
-  - [ ] Display current playback time, total duration, and loading/buffering state.
-- [ ] **2.2 Playlist & Repeat Modes**
-  - [ ] Filter/group playlist by **All Tracks**, **Juz (`xx`)**, or **Surah (`surah_name`)**.
-  - [ ] Implement repeat modes for memorization (muraja'ah):
+- [x] **2.1 Core Playback Controller**
+  - [x] Play, pause, stop, next track, previous track, and seek/scrub progress bar.
+  - [x] Support `.m4a` (AAC/ALAC) and `.mp3` playback via native HTML5 `<audio>`.
+  - [x] Display current playback time, total duration, and loading/buffering state.
+- [x] **2.2 Playlist & Repeat Modes**
+  - [x] Filter/group playlist by **All Tracks**, **Juz (`xx`)**, or **Surah (`surah_name`)**.
+  - [x] Implement repeat modes for memorization (muraja'ah):
     - **Play Once**: Stop after current track or playlist ends.
     - **Repeat Track (1)**: Loop the selected file continuously.
     - **Repeat Playlist / Order (All)**: Play selected tracks in sequence and loop back to the first track.
-  - [ ] Persist last played track, active filter, and repeat mode in `localStorage`.
-- [ ] **2.3 Mobile Background Audio & Media Session**
-  - [ ] Integrate `navigator.mediaSession` metadata (Surah name, Juz & Page, Ayat range) and action handlers (`play`, `pause`, `previoustrack`, `nexttrack`, `seekto`) for iOS and Android lock screens.
+  - [x] Persist last played track, active filter, and repeat mode in `localStorage`.
+- [x] **2.3 Mobile Background Audio & Media Session**
+  - [x] Integrate `navigator.mediaSession` metadata (Surah name, Juz & Page, Ayat range) and action handlers (`play`, `pause`, `previoustrack`, `nexttrack`, `seekto`) for iOS and Android lock screens.
 
 ---
 

@@ -1,4 +1,5 @@
 :root {
+  color-scheme: dark;
   --bg-page: #0f1217;
   --ipod-shell: #1e2229;
   --ipod-border: #2f3540;
@@ -7,7 +8,7 @@
   --text-primary: #f3f6fa;
   --text-secondary: #94a3b8;
   --accent: #38bdf8;
-  --accent-soft: rgba(56, 189, 248, 0.14);
+  --accent-soft: rgba(56, 189, 248, 0.16);
 }
 
 *,
@@ -18,10 +19,23 @@
   padding: 0;
 }
 
+.visually-hidden:where(:not(:focus-within, :active)) {
+  position: absolute !important;
+  clip-path: inset(50%) !important;
+  overflow: hidden !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  white-space: nowrap !important;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   background-color: var(--bg-page);
   color: var(--text-primary);
+  accent-color: var(--accent);
   min-height: 100dvh;
   display: grid;
   place-items: center;
@@ -29,9 +43,14 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+:where(button, input, select, .loader-btn):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .app-shell {
   width: 100%;
-  max-width: 360px;
+  max-width: 380px;
 }
 
 .ipod-frame {
@@ -49,9 +68,17 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--text-secondary);
   padding: 0 0.25rem;
+  gap: 0.5rem;
+}
+
+.topbar-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
 }
 
 .brand-title {
@@ -67,6 +94,12 @@ body {
   padding: 0.15rem 0.55rem;
   border-radius: 999px;
   font-weight: 600;
+  font-size: 0.72rem;
+}
+
+.status-loading {
+  background: rgba(250, 204, 21, 0.18);
+  color: #fde047;
 }
 
 .ipod-screen {
@@ -74,17 +107,17 @@ body {
   border: 2px solid var(--screen-border);
   border-radius: 16px;
   padding: 1rem;
-  min-height: 280px;
-  max-height: 360px;
+  min-height: 310px;
+  max-height: 400px;
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 0.75rem;
   overflow: hidden;
 }
 
 .screen-header {
   border-bottom: 1px solid var(--screen-border);
-  padding-bottom: 0.65rem;
+  padding-bottom: 0.6rem;
 }
 
 .screen-subtitle {
@@ -102,6 +135,101 @@ body {
   text-overflow: ellipsis;
 }
 
+.progress-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.seek-slider {
+  width: 100%;
+  cursor: pointer;
+  accent-color: var(--accent);
+  min-block-size: 24px;
+}
+
+@supports not (accent-color: var(--accent)) {
+  .seek-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+  }
+
+  .seek-slider::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 8px;
+    background: linear-gradient(
+      to right,
+      var(--accent, #38bdf8) var(--progress, 0%),
+      #283240 var(--progress, 0%)
+    );
+    border-radius: 4px;
+  }
+
+  .seek-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: var(--accent, #38bdf8);
+    cursor: pointer;
+    margin-top: -4px;
+  }
+
+  .seek-slider::-moz-range-track {
+    width: 100%;
+    height: 8px;
+    background: #283240;
+    border-radius: 4px;
+  }
+
+  .seek-slider::-moz-range-thumb {
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: var(--accent, #38bdf8);
+    cursor: pointer;
+  }
+
+  .seek-slider::-moz-range-progress {
+    background-color: var(--accent, #38bdf8);
+    height: 8px;
+    border-radius: 4px;
+  }
+}
+
+.time-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.filter-select {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  border: 1px solid var(--screen-border);
+  border-radius: 8px;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.78rem;
+  min-block-size: 28px;
+}
+
 .track-list {
   list-style: none;
   overflow-y: auto;
@@ -111,20 +239,26 @@ body {
   flex: 1;
 }
 
-.track-item {
+.track-item-btn {
+  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem 0.65rem;
   border-radius: 10px;
+  border: 1px solid transparent;
   background: rgba(255, 255, 255, 0.03);
+  color: var(--text-primary);
+  text-align: left;
   cursor: pointer;
-  transition: background 0.15s ease;
+  min-block-size: 40px;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.track-item:hover,
-.track-item.active {
+.track-item-btn:hover,
+.track-item-btn.active {
   background: var(--accent-soft);
+  border-color: rgba(56, 189, 248, 0.35);
 }
 
 .track-item-title {
@@ -137,12 +271,54 @@ body {
   color: var(--text-secondary);
 }
 
+.track-playing-indicator {
+  font-size: 0.72rem;
+  color: var(--accent);
+  font-weight: 700;
+}
+
 .track-empty {
   font-size: 0.82rem;
   color: var(--text-secondary);
   text-align: center;
   margin: auto 0;
   line-height: 1.5;
+}
+
+.player-controls {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.control-btn {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+  border: 1px solid var(--ipod-border);
+  border-radius: 12px;
+  padding: 0.6rem 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  min-block-size: 42px;
+  min-inline-size: 24px;
+  transition: transform 0.1s ease, background 0.15s ease;
+}
+
+.control-btn:active {
+  transform: scale(0.97);
+}
+
+.control-btn-primary {
+  background: var(--accent);
+  color: #0b1016;
+  border-color: var(--accent);
+}
+
+.control-btn-secondary {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
 }
 
 .ipod-loader-bar {
@@ -153,14 +329,16 @@ body {
 .loader-btn {
   flex: 1;
   text-align: center;
-  background: var(--accent);
-  color: #0b1016;
+  background: rgba(56, 189, 248, 0.14);
+  color: var(--accent);
+  border: 1px solid rgba(56, 189, 248, 0.35);
   font-size: 0.82rem;
   font-weight: 700;
   padding: 0.65rem 0.75rem;
   border-radius: 12px;
   cursor: pointer;
   user-select: none;
+  min-block-size: 40px;
 }
 
 .loader-btn-secondary {

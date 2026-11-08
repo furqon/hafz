@@ -30,18 +30,16 @@ const MIME_TYPES = {
   '.mp3': 'audio/mpeg'
 };
 
-await generateTracksManifest();
-
-const server = createServer(async (req, res) => {
+export async function handleAppRequest(req, res, rootDir = ROOT_DIR) {
   try {
-    const reqUrl = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+    const reqUrl = new URL(req.url || '/', `http://${req.headers?.host || 'localhost'}`);
     let decodedPath = decodeURIComponent(reqUrl.pathname);
     if (decodedPath === '/') decodedPath = '/index.html';
 
     const safePath = normalize(decodedPath).replace(/^(\.\.(\/|\\|$))+/, '');
-    const filePath = join(ROOT_DIR, safePath);
+    const filePath = join(rootDir, safePath);
 
-    if (!filePath.startsWith(ROOT_DIR)) {
+    if (!filePath.startsWith(rootDir)) {
       res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Forbidden');
       return;
@@ -56,7 +54,7 @@ const server = createServer(async (req, res) => {
 
     const ext = extname(filePath).toLowerCase();
     const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-    const range = req.headers.range;
+    const range = req.headers?.range || req.headers?.Range;
 
     if (range && (ext === '.m4a' || ext === '.mp3')) {
       const parts = range.replace(/bytes=/, '').split('-');
@@ -84,8 +82,16 @@ const server = createServer(async (req, res) => {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Not Found');
   }
-});
+}
 
-server.listen(PORT, () => {
-  console.log(`Hafz dev server running at http://localhost:${PORT}`);
-});
+export function createAppServer(rootDir = ROOT_DIR) {
+  return createServer((req, res) => handleAppRequest(req, res, rootDir));
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  await generateTracksManifest();
+  const server = createAppServer();
+  server.listen(PORT, () => {
+    console.log(`Hafz dev server running at http://localhost:${PORT}`);
+  });
+}

@@ -9,20 +9,81 @@
   </head>
   <body>
     <main class="app-shell">
-      <section class="ipod-frame" aria-label="Hafz Quran Audio Player">
+      <div class="ipod-frame">
         <header class="ipod-topbar">
           <span class="brand-title">Hafz</span>
-          <span id="track-count-badge" class="status-badge">0 tracks</span>
+          <div class="topbar-badges">
+            <span id="loading-badge" class="status-badge status-loading" hidden>Loading…</span>
+            <span id="repeat-badge" class="status-badge">Repeat All</span>
+            <span id="track-count-badge" class="status-badge">0 tracks</span>
+          </div>
         </header>
 
-        <section class="ipod-screen" aria-live="polite">
+        <div class="ipod-screen">
           <div id="now-playing-summary" class="screen-header">
             <p class="screen-subtitle" id="current-subtitle">Drop or load Quran recordings</p>
             <h1 class="screen-title" id="current-title">Ready to Listen</h1>
           </div>
 
-          <ul id="track-list" class="track-list" role="listbox" aria-label="Recitation Tracks"></ul>
-        </section>
+          <div class="progress-section">
+            <label for="seek-slider" class="visually-hidden">Seek playback position</label>
+            <input
+              id="seek-slider"
+              class="seek-slider"
+              type="range"
+              min="0"
+              max="100"
+              step="0.1"
+              value="0"
+            />
+            <div class="time-row">
+              <span id="current-time">00:00</span>
+              <span id="total-duration">00:00</span>
+            </div>
+          </div>
+
+          <div class="filter-bar">
+            <label for="playlist-filter" class="filter-label">Playlist:</label>
+            <select id="playlist-filter" class="filter-select">
+              <option value="all">All Tracks (0)</option>
+            </select>
+          </div>
+
+          <ul id="track-list" class="track-list" role="list"></ul>
+        </div>
+
+        <div class="player-controls" role="group" aria-label="Playback Controls">
+          <button
+            id="btn-repeat"
+            type="button"
+            class="control-btn control-btn-secondary"
+            aria-label="Repeat Mode: Repeat All"
+          >
+            Repeat All
+          </button>
+          <button id="btn-prev" type="button" class="control-btn" aria-label="Previous Track">
+            Prev
+          </button>
+          <button
+            id="btn-play"
+            type="button"
+            class="control-btn control-btn-primary"
+            aria-label="Play"
+          >
+            Play
+          </button>
+          <button id="btn-next" type="button" class="control-btn" aria-label="Next Track">
+            Next
+          </button>
+          <button
+            id="btn-stop"
+            type="button"
+            class="control-btn control-btn-secondary"
+            aria-label="Stop"
+          >
+            Stop
+          </button>
+        </div>
 
         <footer class="ipod-loader-bar">
           <label class="loader-btn" for="folder-input">
@@ -47,7 +108,7 @@
             />
           </label>
         </footer>
-      </section>
+      </div>
     </main>
 
     <script type="module" src="./src/main.js"></script>

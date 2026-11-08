@@ -1,5 +1,51 @@
 {
-  "generatedAt": "2026-11-07T23:41:54.348Z",
-  "count": 0,
-  "tracks": []
+  "generatedAt": "2026-11-08T00:13:26.084Z",
+  "count": 3,
+  "tracks": [
+    {
+      "id": "juz 29 01 al-mulk 01-12.m4a",
+      "filename": "juz 29 01 al-mulk 01-12.m4a",
+      "url": "./public/audio/juz%2029%2001%20al-mulk%2001-12.m4a",
+      "juz": 29,
+      "pageInJuz": 1,
+      "surahName": "al-mulk",
+      "surahDisplay": "Al-Mulk",
+      "ayatStart": 1,
+      "ayatEnd": 12,
+      "ext": "m4a",
+      "isParsed": true,
+      "title": "Al-Mulk (01–12)",
+      "subtitle": "Juz 29 • Page 01"
+    },
+    {
+      "id": "juz 30 01 an-naba 01-30.m4a",
+      "filename": "juz 30 01 an-naba 01-30.m4a",
+      "url": "./public/audio/juz%2030%2001%20an-naba%2001-30.m4a",
+      "juz": 30,
+      "pageInJuz": 1,
+      "surahName": "an-naba",
+      "surahDisplay": "An-Naba",
+      "ayatStart": 1,
+      "ayatEnd": 30,
+      "ext": "m4a",
+      "isParsed": true,
+      "title": "An-Naba (01–30)",
+      "subtitle": "Juz 30 • Page 01"
+    },
+    {
+      "id": "juz 30 02 an-naziat 01-20.m4a",
+      "filename": "juz 30 02 an-naziat 01-20.m4a",
+      "url": "./public/audio/juz%2030%2002%20an-naziat%2001-20.m4a",
+      "juz": 30,
+      "pageInJuz": 2,
+      "surahName": "an-naziat",
+      "surahDisplay": "An-Naziat",
+      "ayatStart": 1,
+      "ayatEnd": 20,
+      "ext": "m4a",
+      "isParsed": true,
+      "title": "An-Naziat (01–20)",
+      "subtitle": "Juz 30 • Page 02"
+    }
+  ]
 }
