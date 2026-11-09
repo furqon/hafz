@@ -22,6 +22,7 @@ export const SHELL_FILES = [
   'styles/main.css',
   'src/main.js',
   'src/player.js',
+  'src/quran.js',
   'src/loader.js',
   'src/parser.js',
   'public/icons/icon.svg'

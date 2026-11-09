@@ -90,11 +90,11 @@ A lightweight, sleek, iPod-inspired Quran recitation audio player PWA for kids. 
 
 ## Phase 5: Quran Mushaf Page Display (Later / Phase 2 Feature)
 
-- [ ] **5.1 Juz & Page to Mushaf Page Mapping**
-  - [ ] Map `(juz xx, page yy [01-20])` and `(surah_name, ayat aa-bb)` to the standard 604-page Madani Mushaf page number (`1`–`604`).
+- [x] **5.1 Juz & Page to Mushaf Page Mapping**
+  - [x] Map `(juz xx, page yy [01-20])` and `(surah_name, ayat aa-bb)` to the standard 604-page Madani Mushaf page number (`1`–`604`).
     - Standard formula: `mushafPage = (juz - 1) * 20 + pageInJuz + 1` (with edge-case adjustments for Juz 1 & Juz 30).
-- [ ] **5.2 Split / Toggleable Quran Reader View**
-  - [ ] Add a "Read Quran Page" toggle on the player screen while audio is playing.
-  - [ ] Render the corresponding Quran page (high-DPI Mushaf page image or clean Uthmani text for Ayat `aa`–`bb`).
-  - [ ] Auto-advance the displayed Quran page when the playlist advances to the next recording.
-  - [ ] Cache viewed Quran pages offline for repeat listening/reading sessions.
+- [x] **5.2 Split / Toggleable Quran Reader View**
+  - [x] Add a "Read Quran Page" toggle on the player screen while audio is playing.
+  - [x] Render the corresponding Quran page (high-DPI Mushaf page image or clean Uthmani text for Ayat `aa`–`bb`).
+  - [x] Auto-advance the displayed Quran page when the playlist advances to the next recording.
+  - [x] Cache viewed Quran pages offline for repeat listening/reading sessions.

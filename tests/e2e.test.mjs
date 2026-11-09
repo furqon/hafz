@@ -91,6 +91,7 @@ function createMockDocument() {
       textContent: '',
       value: '',
       hidden: false,
+      inert: false,
       dataset: {},
       children: [],
       style: {
@@ -115,6 +116,9 @@ function createMockDocument() {
       setAttribute(k, v) {
         attrs.set(k, String(v));
       },
+      removeAttribute(k) {
+        attrs.delete(k);
+      },
       getAttribute(k) {
         return attrs.get(k) ?? null;
       },
@@ -136,6 +140,9 @@ function createMockDocument() {
 
   const ids = [
     'ipod-screen',
+    'view-now-playing',
+    'view-browser',
+    'view-quran',
     'track-list',
     'track-count-badge',
     'repeat-badge',
@@ -148,6 +155,12 @@ function createMockDocument() {
     'remaining-time',
     'total-duration',
     'playlist-filter',
+    'btn-quran',
+    'btn-quran-close',
+    'quran-page-badge',
+    'quran-meta-badge',
+    'quran-surah-arabic',
+    'quran-verses',
     'btn-menu',
     'btn-theme',
     'btn-repeat',
@@ -178,7 +191,7 @@ describe('End-to-End (E2E) Server & Player Integration', () => {
     await generateTracksManifest();
   });
 
-  it('serves index.html with all Phase 2, 3 & 4 iPod UI controls, PWA tags, and accessible markup', async () => {
+  it('serves index.html with all Phase 2–5 iPod UI controls, PWA tags, Quran reader view, and accessible markup', async () => {
     const res = await appFetch('http://localhost/');
     assert.equal(res.status, 200);
     const html = await res.text();
@@ -189,6 +202,9 @@ describe('End-to-End (E2E) Server & Player Integration', () => {
     assert.match(html, /link rel="manifest" href="\.\/manifest\.webmanifest"/);
     assert.match(html, /link rel="apple-touch-icon" href="\.\/public\/icons\/apple-touch-icon\.png"/);
     assert.match(html, /id="ipod-screen"[^>]*data-view="now-playing"/);
+    assert.match(html, /id="view-quran"/);
+    assert.match(html, /id="btn-quran"/);
+    assert.match(html, /id="quran-verses"[^>]*lang="ar"[^>]*dir="rtl"/);
     assert.match(html, /class="click-wheel"/);
     assert.match(html, /id="btn-menu"/);
     assert.match(html, /id="btn-theme"/);
@@ -202,7 +218,7 @@ describe('End-to-End (E2E) Server & Player Integration', () => {
     assert.match(html, /id="track-list"[^>]*role="list"/);
   });
 
-  it('serves valid PWA manifest.webmanifest, icons (192, 512, maskable, apple-touch-icon), and sw.js', async () => {
+  it('serves valid PWA manifest.webmanifest, icons (192, 512, maskable, apple-touch-icon), quran pages.json, and sw.js', async () => {
     const manifestRes = await appFetch('http://localhost/manifest.webmanifest');
     assert.equal(manifestRes.status, 200);
     assert.match(manifestRes.headers.get('content-type') || '', /application\/manifest\+json/);
@@ -220,8 +236,11 @@ describe('End-to-End (E2E) Server & Player Integration', () => {
       assert.ok(buf.byteLength > 100);
     }
 
-    const appleIconRes = await appFetch('http://localhost/public/icons/apple-touch-icon.png');
-    assert.equal(appleIconRes.status, 200);
+    const quranRes = await appFetch('http://localhost/public/quran/pages.json');
+    assert.equal(quranRes.status, 200);
+    const quranData = await quranRes.json();
+    assert.ok(quranData.pages['562']);
+    assert.ok(quranData.pages['582']);
 
     const swRes = await appFetch('http://localhost/sw.js');
     assert.equal(swRes.status, 200);
@@ -233,6 +252,7 @@ describe('End-to-End (E2E) Server & Player Integration', () => {
     assert.ok(sw);
     assert.ok(sw.APP_SHELL_URLS.includes('./index.html'));
     assert.ok(sw.APP_SHELL_URLS.includes('./manifest.webmanifest'));
+    assert.ok(sw.APP_SHELL_URLS.includes('./public/quran/pages.json'));
 
     const cacheBoxes = new Map();
     const origCaches = globalThis.caches;
@@ -269,7 +289,6 @@ describe('End-to-End (E2E) Server & Player Integration', () => {
     };
 
     try {
-      // 1. NetworkFirst caches index.html when online and serves cached copy when offline
       const onlineHtml = await sw.networkFirst({ url: 'http://localhost/index.html' }, sw.SHELL_CACHE);
       assert.equal(onlineHtml.status, 200);
 
@@ -278,7 +297,6 @@ describe('End-to-End (E2E) Server & Player Integration', () => {
       assert.equal(offlineHtml.status, 200);
       assert.match(await offlineHtml.text(), /Hafz/);
 
-      // 2. CacheFirst caches static asset online and serves from cache when offline
       isOffline = false;
       const onlineCss = await sw.cacheFirst({ url: 'http://localhost/styles/main.css' }, sw.SHELL_CACHE);
       assert.equal(onlineCss.status, 200);
@@ -342,29 +360,24 @@ describe('End-to-End (E2E) Server & Player Integration', () => {
     const player = createPlayerController({ audio, storage, mediaSession: null });
     player.setTracks(tracks);
 
-    // Filter to Juz 30
     player.setFilter('juz:30');
     assert.equal(player.getSnapshot().filteredTracks.length, 2);
     assert.equal(player.getSnapshot().currentTrack.surahName, 'an-naba');
 
-    // Start playback and scrub to 50%
     await player.play();
     assert.equal(player.getSnapshot().isPlaying, true);
     player.seekByPercent(50);
     assert.equal(player.getSnapshot().progressPercent, 50);
 
-    // Advance to next track in Juz 30 (An-Naziat)
     await player.next();
     assert.equal(player.getSnapshot().currentTrack.surahName, 'an-naziat');
 
-    // Cycle repeat mode from ALL -> ONCE -> ONE
     assert.equal(player.getSnapshot().repeatMode, REPEAT_MODES.ALL);
     player.cycleRepeatMode();
     assert.equal(player.getSnapshot().repeatMode, REPEAT_MODES.ONCE);
     player.cycleRepeatMode();
     assert.equal(player.getSnapshot().repeatMode, REPEAT_MODES.ONE);
 
-    // Simulate browser reload with persisted localStorage state
     const reloadedPlayer = createPlayerController({
       audio: createMockAudioElement(),
       storage,
@@ -378,7 +391,7 @@ describe('End-to-End (E2E) Server & Player Integration', () => {
     assert.equal(snap.repeatMode, REPEAT_MODES.ONE);
   });
 
-  it('drives the full Phase 3 & 4 iPod DOM UI end-to-end: Click-Wheel, Menu/Browser toggle, Service Worker registration, and Theme toggle', async () => {
+  it('drives the full Phase 3–5 iPod DOM UI end-to-end: Click-Wheel, Quran Mushaf Reader toggle & auto-advance, Service Worker, and Theme toggle', async () => {
     const doc = createMockDocument();
     const store = new Map();
     const storage = {
@@ -404,6 +417,7 @@ describe('End-to-End (E2E) Server & Player Integration', () => {
       navigator: mockNavigator,
       manifestUrl: 'http://localhost/public/audio/tracks.json',
       baseAudioPath: 'http://localhost/public/audio/',
+      quranDataUrl: 'http://localhost/public/quran/pages.json',
       fetchImpl: appFetch
     });
 
@@ -414,6 +428,32 @@ describe('End-to-End (E2E) Server & Player Integration', () => {
     assert.equal(app.els.currentTitle.textContent, 'Al-Mulk (01–12)');
     assert.equal(app.els.currentSubtitle.textContent, 'Juz 29 • Page 01');
     assert.equal(app.els.currentAyat.textContent, 'Surah Al-Mulk • Ayat 01–12');
+    assert.equal(app.getScreenView(), 'now-playing');
+    assert.equal(app.els.viewNowPlaying.inert, false);
+    assert.equal(app.els.viewQuran.inert, true);
+
+    // Verify Quran Mushaf page 562 loaded for Al-Mulk (01-12)
+    assert.equal(app.els.quranPageBadge.textContent, 'Mushaf Page 562');
+    assert.equal(app.els.quranSurahArabic.textContent, 'سُورَةُ ٱلْمُلْكِ');
+    assert.ok(app.els.quranVerses.children.length >= 12);
+
+    // Open Quran Reader view via "Read Page" button
+    app.els.btnQuran.click();
+    assert.equal(app.getScreenView(), 'quran');
+    assert.equal(app.els.ipodScreen.getAttribute('data-view'), 'quran');
+    assert.equal(app.els.btnQuran.getAttribute('aria-pressed'), 'true');
+    assert.equal(app.els.viewQuran.inert, false);
+    assert.equal(app.els.viewNowPlaying.inert, true);
+
+    // Advance to next track while in Quran Reader view -> auto-advances Quran page to Mushaf Page 582 (An-Naba)
+    await app.player.next();
+    await app.syncQuranPageForTrack(app.player.getSnapshot().currentTrack);
+    assert.equal(app.els.quranPageBadge.textContent, 'Mushaf Page 582');
+    assert.equal(app.els.quranSurahArabic.textContent, 'سُورَةُ ٱلنَّبَإِ');
+    assert.equal(app.els.quranMetaBadge.textContent, 'Juz 30 • Page 01 • Ayat 01–30');
+
+    // Close Quran Reader back to Now Playing
+    app.els.btnQuranClose.click();
     assert.equal(app.getScreenView(), 'now-playing');
 
     // Toggle to Track Browser screen via Click-Wheel MENU button
@@ -429,11 +469,11 @@ describe('End-to-End (E2E) Server & Player Integration', () => {
     assert.equal(app.els.trackList.children[2].className, 'track-group-header');
     assert.equal(app.els.trackList.children[2].textContent, 'Juz 30');
 
-    // Click the second track (An-Naba in Juz 30) in the browser list -> plays and switches back to Now Playing
-    const secondTrackBtn = app.els.trackList.children[3].children[0];
-    secondTrackBtn.click();
+    // Click the third track (An-Naziat in Juz 30) in the browser list -> plays and switches back to Now Playing
+    const thirdTrackBtn = app.els.trackList.children[4].children[0];
+    thirdTrackBtn.click();
     assert.equal(app.getScreenView(), 'now-playing');
-    assert.equal(app.els.currentTitle.textContent, 'An-Naba (01–30)');
+    assert.equal(app.els.currentTitle.textContent, 'An-Naziat (01–20)');
     assert.equal(app.els.btnPlay.textContent, 'Pause');
 
     // Scrub seek slider to 25% (30s of 120s -> remaining -01:30)
@@ -442,7 +482,7 @@ describe('End-to-End (E2E) Server & Player Integration', () => {
     assert.equal(app.els.currentTime.textContent, '00:30');
     assert.equal(app.els.remainingTime.textContent, '-01:30');
 
-    // Toggle theme (default system in headless is 'dark' -> toggles to 'light', then back to system default)
+    // Toggle theme
     app.els.btnTheme.click();
     assert.equal(doc.metaColorScheme.content, 'light');
     assert.equal(storage.getItem('color-scheme'), 'light');

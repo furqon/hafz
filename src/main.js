@@ -1,5 +1,5 @@
 /**
- * Hafz Application Entry Point (Phase 3: Sleek iPod-Inspired UI/UX)
+ * Hafz Application Entry Point (Phase 5: Quran Mushaf Page Display & Reader)
  */
 
 import {
@@ -9,6 +9,7 @@ import {
 } from './loader.js';
 import { pad2 } from './parser.js';
 import { createPlayerController, formatTime } from './player.js';
+import { loadQuranPageForTrack } from './quran.js';
 
 /**
  * Registers the PWA Service Worker when supported by the browser.
@@ -32,6 +33,9 @@ export function createAppUI(doc = globalThis.document, options = {}) {
 
   const els = {
     ipodScreen: doc.getElementById('ipod-screen'),
+    viewNowPlaying: doc.getElementById('view-now-playing'),
+    viewBrowser: doc.getElementById('view-browser'),
+    viewQuran: doc.getElementById('view-quran'),
     trackList: doc.getElementById('track-list'),
     trackCountBadge: doc.getElementById('track-count-badge'),
     repeatBadge: doc.getElementById('repeat-badge'),
@@ -44,6 +48,12 @@ export function createAppUI(doc = globalThis.document, options = {}) {
     remainingTime: doc.getElementById('remaining-time'),
     totalDuration: doc.getElementById('total-duration'),
     playlistFilter: doc.getElementById('playlist-filter'),
+    btnQuran: doc.getElementById('btn-quran'),
+    btnQuranClose: doc.getElementById('btn-quran-close'),
+    quranPageBadge: doc.getElementById('quran-page-badge'),
+    quranMetaBadge: doc.getElementById('quran-meta-badge'),
+    quranSurahArabic: doc.getElementById('quran-surah-arabic'),
+    quranVerses: doc.getElementById('quran-verses'),
     btnMenu: doc.getElementById('btn-menu'),
     btnTheme: doc.getElementById('btn-theme'),
     btnRepeat: doc.getElementById('btn-repeat'),
@@ -61,24 +71,120 @@ export function createAppUI(doc = globalThis.document, options = {}) {
     CSS.supports('accent-color', '#38bdf8');
 
   let lastFilterSignature = '';
+  let lastQuranTrackId = null;
+  let currentQuranPageData = null;
   let screenView = 'now-playing';
 
+  function setInertState(element, isInert) {
+    if (!element) return;
+    element.inert = isInert;
+    if (isInert) {
+      element.setAttribute?.('inert', '');
+    } else {
+      element.removeAttribute?.('inert');
+    }
+  }
+
   function setScreenView(view) {
-    screenView = view === 'browser' ? 'browser' : 'now-playing';
+    if (view === 'browser' || view === 'quran') {
+      screenView = view;
+    } else {
+      screenView = 'now-playing';
+    }
+
     if (els.ipodScreen) {
       els.ipodScreen.setAttribute('data-view', screenView);
       els.ipodScreen.dataset.view = screenView;
     }
+
+    setInertState(els.viewNowPlaying, screenView !== 'now-playing');
+    setInertState(els.viewBrowser, screenView !== 'browser');
+    setInertState(els.viewQuran, screenView !== 'quran');
+
     if (els.btnMenu) {
       const isBrowser = screenView === 'browser';
       els.btnMenu.setAttribute('aria-expanded', String(isBrowser));
-      els.btnMenu.textContent = isBrowser ? 'NOW' : 'MENU';
+      els.btnMenu.textContent = screenView === 'now-playing' ? 'MENU' : 'NOW';
     }
+
+    if (els.btnQuran) {
+      els.btnQuran.setAttribute('aria-pressed', String(screenView === 'quran'));
+    }
+
     return screenView;
   }
 
   function toggleScreenView() {
     return setScreenView(screenView === 'now-playing' ? 'browser' : 'now-playing');
+  }
+
+  function toggleQuranView() {
+    return setScreenView(screenView === 'quran' ? 'now-playing' : 'quran');
+  }
+
+  function renderQuranPage(pageData) {
+    currentQuranPageData = pageData;
+    if (!pageData) return;
+
+    if (els.quranPageBadge) {
+      els.quranPageBadge.textContent = pageData.headerLabel;
+    }
+    if (els.quranMetaBadge) {
+      els.quranMetaBadge.textContent = `${pageData.juzPageLabel} • ${pageData.ayatRangeLabel}`;
+    }
+    if (els.quranSurahArabic) {
+      els.quranSurahArabic.textContent = pageData.surahArabic || 'ٱلْقُرْآنُ ٱلْكَرِيمُ';
+    }
+
+    if (!els.quranVerses) return;
+    els.quranVerses.innerHTML = '';
+
+    if (pageData.bismillah) {
+      const bismillahEl = doc.createElement('div');
+      bismillahEl.className = 'quran-bismillah';
+      bismillahEl.textContent = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ';
+      els.quranVerses.appendChild(bismillahEl);
+    }
+
+    if (Array.isArray(pageData.verses) && pageData.verses.length > 0) {
+      for (const verse of pageData.verses) {
+        const span = doc.createElement('span');
+        span.className = `quran-verse${verse.isHighlighted ? ' highlighted' : ''}`;
+        span.dataset.ayah = String(verse.ayah);
+        span.textContent = `${verse.text} `;
+
+        const marker = doc.createElement('span');
+        marker.className = 'quran-verse-marker';
+        marker.textContent = `﴿${verse.arabicNumber}﴾ `;
+
+        span.appendChild(marker);
+        els.quranVerses.appendChild(span);
+      }
+    } else {
+      const fallbackNote = doc.createElement('p');
+      fallbackNote.className = 'quran-fallback-note';
+      fallbackNote.textContent = `${pageData.headerLabel} — ${pageData.surahDisplay} (${pageData.ayatRangeLabel})`;
+      els.quranVerses.appendChild(fallbackNote);
+    }
+  }
+
+  async function syncQuranPageForTrack(track) {
+    if (!track) {
+      lastQuranTrackId = null;
+      currentQuranPageData = null;
+      return null;
+    }
+
+    lastQuranTrackId = track.id;
+    const pageData = await loadQuranPageForTrack(track, {
+      quranDataUrl: options.quranDataUrl,
+      fetchImpl: options.fetchImpl,
+      storage
+    });
+    if (lastQuranTrackId === track.id) {
+      renderQuranPage(pageData);
+    }
+    return pageData;
   }
 
   function getSystemScheme() {
@@ -310,6 +416,10 @@ export function createAppUI(doc = globalThis.document, options = {}) {
 
     renderFilterOptions(availableFilters, filterKey);
     renderTrackList(snapshot);
+
+    if (currentTrack?.id !== lastQuranTrackId) {
+      syncQuranPageForTrack(currentTrack);
+    }
   }
 
   const player = createPlayerController({
@@ -333,8 +443,11 @@ export function createAppUI(doc = globalThis.document, options = {}) {
 
   async function init() {
     applyMetaScheme(getStoredScheme() ?? 'light dark');
+    setScreenView('now-playing');
 
     els.btnMenu?.addEventListener('click', () => toggleScreenView());
+    els.btnQuran?.addEventListener('click', () => toggleQuranView());
+    els.btnQuranClose?.addEventListener('click', () => setScreenView('now-playing'));
     els.btnTheme?.addEventListener('click', () => toggleTheme());
     els.btnPlay?.addEventListener('click', () => player.togglePlay());
     els.btnPrev?.addEventListener('click', () => player.prev());
@@ -374,6 +487,7 @@ export function createAppUI(doc = globalThis.document, options = {}) {
       options.fetchImpl
     );
     player.setTracks(staticTracks);
+    await syncQuranPageForTrack(player.getSnapshot().currentTrack);
     await registerServiceWorker(options.navigator);
     return player;
   }
@@ -384,8 +498,11 @@ export function createAppUI(doc = globalThis.document, options = {}) {
     init,
     setScreenView,
     toggleScreenView,
+    toggleQuranView,
     toggleTheme,
-    getScreenView: () => screenView
+    syncQuranPageForTrack,
+    getScreenView: () => screenView,
+    getCurrentQuranPage: () => currentQuranPageData
   };
 }
 

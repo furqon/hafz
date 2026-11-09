@@ -20,6 +20,7 @@ const APP_SHELL_URLS = [
   './styles/main.css',
   './src/main.js',
   './src/player.js',
+  './src/quran.js',
   './src/loader.js',
   './src/parser.js',
   './public/icons/icon.svg',
@@ -27,7 +28,8 @@ const APP_SHELL_URLS = [
   './public/icons/icon-512.png',
   './public/icons/icon-maskable-512.png',
   './public/icons/apple-touch-icon.png',
-  './public/audio/tracks.json'
+  './public/audio/tracks.json',
+  './public/quran/pages.json'
 ];
 
 async function trimCache(cacheName, maxEntries) {

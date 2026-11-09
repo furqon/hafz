@@ -53,7 +53,18 @@
               </div>
               <p class="screen-subtitle" id="current-subtitle">Drop or load Quran recordings</p>
               <h1 class="screen-title" id="current-title">Ready to Listen</h1>
-              <p class="screen-ayat-badge" id="current-ayat">Select a track to begin</p>
+              <div class="now-playing-badges-row">
+                <p class="screen-ayat-badge" id="current-ayat">Select a track to begin</p>
+                <button
+                  id="btn-quran"
+                  type="button"
+                  class="read-quran-btn"
+                  aria-pressed="false"
+                  aria-label="Read Quran Page"
+                >
+                  📖 Read Page
+                </button>
+              </div>
             </div>
 
             <div class="progress-section">
@@ -76,7 +87,7 @@
           </div>
 
           <!-- Screen View 2: Track Browser & Grouped Playlist -->
-          <div id="view-browser" class="screen-view screen-browser">
+          <div id="view-browser" class="screen-view screen-browser" inert>
             <div class="filter-bar">
               <label for="playlist-filter" class="filter-label">Filter:</label>
               <select id="playlist-filter" class="filter-select">
@@ -85,6 +96,37 @@
             </div>
 
             <ul id="track-list" class="track-list" role="list"></ul>
+          </div>
+
+          <!-- Screen View 3: Quran Mushaf Page Reader -->
+          <div id="view-quran" class="screen-view screen-quran" inert>
+            <div class="quran-reader-header">
+              <div class="quran-reader-titles">
+                <span id="quran-page-badge" class="quran-page-badge">Mushaf Page 1</span>
+                <span id="quran-meta-badge" class="quran-meta-badge">Juz 01 • Page 01</span>
+              </div>
+              <button
+                id="btn-quran-close"
+                type="button"
+                class="quran-close-btn"
+                aria-label="Back to Now Playing"
+              >
+                ✕ Close
+              </button>
+            </div>
+
+            <div class="quran-mushaf-sheet">
+              <div id="quran-surah-arabic" class="quran-surah-banner" lang="ar" dir="rtl">
+                ٱلْقُرْآنُ ٱلْكَرِيمُ
+              </div>
+              <div
+                id="quran-verses"
+                class="quran-verses-box"
+                lang="ar"
+                dir="rtl"
+                aria-label="Quran Mushaf Page Verses"
+              ></div>
+            </div>
           </div>
         </div>
 
