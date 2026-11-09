@@ -233,6 +233,40 @@ export async function loadQuranPageForTrack(track, options = {}) {
     }
   }
 
+  // 2b. Optional remote fetch from AlQuran Cloud Uthmani API for unbundled pages (1..604)
+  if (!basePage && mushafPage && options.allowRemoteFetch && typeof fetchImpl === 'function') {
+    try {
+      const apiRes = await fetchImpl(
+        `https://api.alquran.cloud/v1/page/${mushafPage}/quran-uthmani`
+      );
+      if (apiRes.ok) {
+        const payload = await apiRes.json();
+        const ayahs = payload?.data?.ayahs;
+        if (Array.isArray(ayahs) && ayahs.length > 0) {
+          const firstAyah = ayahs[0];
+          basePage = {
+            mushafPage,
+            juz: firstAyah?.juz || track.juz || 1,
+            pageInJuz: track.pageInJuz || 1,
+            surahNumber: firstAyah?.surah?.number || surahInfo?.number || null,
+            surahName: surahSlug,
+            surahDisplay:
+              track.surahDisplay || firstAyah?.surah?.englishName || surahInfo?.display || 'Quran',
+            surahArabic: firstAyah?.surah?.name || surahInfo?.arabic || 'ٱلْقُرْآنُ ٱلْكَرِيمُ',
+            bismillah: false,
+            verses: ayahs.map((a) => ({
+              ayah: a.numberInSurah,
+              text: a.text
+            }))
+          };
+          writeCachedQuranPage(mushafPage, basePage, storage);
+        }
+      }
+    } catch {
+      // Offline or remote API unreachable; fall back to local Mushaf descriptor
+    }
+  }
+
   // 3. Fallback synthesized Mushaf Page descriptor when specific verse text is not bundled
   if (!basePage) {
     basePage = {

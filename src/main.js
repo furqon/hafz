@@ -22,7 +22,9 @@ export async function registerServiceWorker(nav = globalThis.navigator, swUrl = 
     return null;
   }
   try {
-    return await nav.serviceWorker.register(swUrl);
+    const reg = await nav.serviceWorker.register(swUrl);
+    reg?.update?.();
+    return reg;
   } catch {
     return null;
   }
@@ -179,6 +181,7 @@ export function createAppUI(doc = globalThis.document, options = {}) {
     const pageData = await loadQuranPageForTrack(track, {
       quranDataUrl: options.quranDataUrl,
       fetchImpl: options.fetchImpl,
+      allowRemoteFetch: options.allowRemoteFetch ?? !options.fetchImpl,
       storage
     });
     if (lastQuranTrackId === track.id) {

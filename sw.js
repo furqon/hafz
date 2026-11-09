@@ -1,14 +1,13 @@
 /**
- * Hafz Service Worker (Phase 4: Offline Support & Caching Strategies)
+ * Hafz Service Worker (Phase 4 & 5: Offline Support & Caching Strategies)
  *
  * Strategies (following Modern Web Guidance):
- *   - HTML Navigation: NetworkFirst (fresh shell online, cached fallback offline)
- *   - Dynamic Manifest (tracks.json): StaleWhileRevalidate
- *   - Static App Shell (CSS, JS, Icons, Manifest): CacheFirst
- *   - Audio Recordings (.m4a, .mp3): CacheFirst with bounded cache entries
+ *   - HTML, JS, CSS App Shell: NetworkFirst (always fresh when online, cached fallback offline)
+ *   - Dynamic Manifest & Quran Data (.json): StaleWhileRevalidate
+ *   - Icons, Webmanifest & Audio Recordings (.m4a, .mp3): CacheFirst with bounded cache entries
  */
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const SHELL_CACHE = `hafz-shell-${CACHE_VERSION}`;
 const AUDIO_CACHE = `hafz-audio-${CACHE_VERSION}`;
 const MAX_AUDIO_ENTRIES = 60;
@@ -85,7 +84,7 @@ async function staleWhileRevalidate(request, cacheName) {
     })
     .catch(() => null);
 
-  return cached || (await networkPromise) || new Response('[]', { status: 200 });
+  return cached || (await networkPromise) || new Response('{}', { status: 200 });
 }
 
 if (typeof self !== 'undefined' && typeof self.addEventListener === 'function') {
@@ -120,14 +119,20 @@ if (typeof self !== 'undefined' && typeof self.addEventListener === 'function') 
     const url = new URL(request.url);
     if (url.origin !== self.location.origin) return;
 
-    // 1. HTML Navigation -> NetworkFirst
-    if (request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/') {
+    // 1. HTML, JS, and CSS App Shell -> NetworkFirst so updates appear immediately
+    if (
+      request.mode === 'navigate' ||
+      url.pathname === '/' ||
+      url.pathname.endsWith('.html') ||
+      url.pathname.endsWith('.js') ||
+      url.pathname.endsWith('.css')
+    ) {
       event.respondWith(networkFirst(request, SHELL_CACHE));
       return;
     }
 
-    // 2. Dynamic Tracks Manifest -> StaleWhileRevalidate
-    if (url.pathname.endsWith('/tracks.json')) {
+    // 2. JSON Manifests & Quran Data -> StaleWhileRevalidate
+    if (url.pathname.endsWith('.json')) {
       event.respondWith(staleWhileRevalidate(request, SHELL_CACHE));
       return;
     }
@@ -141,7 +146,7 @@ if (typeof self !== 'undefined' && typeof self.addEventListener === 'function') 
       return;
     }
 
-    // 4. Static App Shell Assets (CSS, JS, Icons, Webmanifest) -> CacheFirst
+    // 4. Static Icons & Webmanifest -> CacheFirst
     event.respondWith(cacheFirst(request, SHELL_CACHE));
   });
 }
@@ -156,4 +161,3 @@ globalThis.__hafzSW = {
   cacheFirst,
   staleWhileRevalidate
 };
-
